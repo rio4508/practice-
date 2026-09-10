@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vignette Bloom ASCII Renderer | 21st.dev</title>
+  <link rel="stylesheet" href="index.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+  <!-- Header Bar -->
+  <header class="header">
+    <div class="brand">
+      <div class="logo-badge">V</div>
+      <div>
+        <div class="brand-title">Vignette Bloom ASCII</div>
+        <div class="brand-subtitle">Canvas2D Raster & ASCII Engine (21st.dev)</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <label class="btn">
+        📷 Upload Photo
+        <input type="file" id="imageInput" accept="image/*" style="display: none;">
+      </label>
+      <button class="btn" id="resetPresetBtn">↺ Reset Preset</button>
+      <button class="btn" id="exportJsonBtn">⚙ Export JSON</button>
+      <button class="btn btn-primary" id="exportSnapshotBtn">✦ Export Image</button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="app-container">
+
+    <!-- Canvas Viewport -->
+    <main class="viewport-container">
+      <div class="fps-counter" id="fpsCounter">60 FPS</div>
+      <div class="preset-badge" id="activePresetBadge">Vignette Bloom (Mosaic)</div>
+
+      <div class="canvas-wrapper">
+        <canvas id="mainCanvas" width="960" height="720"></canvas>
+      </div>
+    </main>
+
+    <!-- Sidebar Controls -->
+    <aside class="controls-sidebar">
+      <!-- Tabs Header -->
+      <nav class="tabs-nav">
+        <button class="tab-btn active" data-tab="tab-mode">Mode & Grid</button>
+        <button class="tab-btn" data-tab="tab-color">Color & BG</button>
+        <button class="tab-btn" data-tab="tab-pfx">Post FX</button>
+        <button class="tab-btn" data-tab="tab-anim">Anim & Lights</button>
+      </nav>
+
+      <!-- TAB 1: Mode & Grid -->
+      <div class="tab-content active" id="tab-mode">
+        <div class="control-group">
+          <div class="group-title">Render Mode</div>
+          <div class="control-row">
+            <select id="renderMode">
+              <option value="mosaic">mosaic (Default)</option>
+              <option value="characters">characters (ASCII / Glyphs)</option>
+              <option value="dither">dither (Bayer Matrix)</option>
+              <option value="pixel">pixel (Crisp Pixel Blocks)</option>
+              <option value="dots">dots (Luminance Circles)</option>
+              <option value="cross">cross (Crosshairs)</option>
+              <option value="diamond">diamond (Rhombus Grid)</option>
+              <option value="voxel">voxel (3D Isometric Cubes)</option>
+              <option value="lego">lego (Lego Studs)</option>
+              <option value="mixed">mixed (Composite Shapes)</option>
+              <option value="lines">lines (Horizontal Lines)</option>
+              <option value="diagonal">diagonal (Hatch Lines)</option>
+              <option value="braille">braille (Braille Patterns)</option>
+              <option value="disco">disco (Retro Glow Circles)</option>
+              <option value="hexdump">hexdump (Hex Digits)</option>
+              <option value="matrix">matrix (Green Code Rain)</option>
+              <option value="rings">rings (Concentric Rings)</option>
+              <option value="hearts">hearts (Heart Glyphs)</option>
+              <option value="stars">stars (5-Point Stars)</option>
+              <option value="hexagons">hexagons (Honeycomb)</option>
+              <option value="triangles">triangles (Low-Poly Mesh)</option>
+              <option value="bubbles">bubbles (Reflective Soap Bubbles)</option>
+              <option value="hatch">hatch (Pencil Cross-Hatch)</option>
+              <option value="contour">contour (Topographic Iso-lines)</option>
+              <option value="halfblocks">halfblocks (Double Vertical Detail)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="group-title">Grid & Spacing</div>
+          <div class="control-row">
+            <div class="control-label">
+              <span>Cell Size (px)</span>
+              <span class="control-value" id="val-cellSize">16</span>
+            </div>
+            <input type="range" id="cellSize" min="4" max="48" value="16">
+          </div>
+
+          <div class="control-row">
+            <div class="control-label">
+              <span>Coverage (%)</span>
+              <span class="control-value" id="val-coverage">100</span>
+            </div>
+            <input type="range" id="coverage" min="10" max="100" value="100">
+          </div>
+
+          <div class="control-row">
+            <div class="control-label">
+              <span>Density Offset</span>
+              <span class="control-value" id="val-density">0</span>
+            </div>
+            <input type="range" id="density" min="-50" max="50" value="0">
+          </div>
+
+          <div class="control-row">
+            <div class="control-label">
+              <span>Edge Emphasis</span>
+              <span class="control-value" id="val-edgeEmphasis">0</span>
+            </div>
+            <input type="range" id="edgeEmphasis" min="0" max="100" value="0">
+          </div>
+
+          <div class="control-row">
+            <label class="switch-label">
+              <span>Invert Luminance</span>
+              <div class="switch">
+                <input type="checkbox" id="invert">
+                <span class="slider"></span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="group-title">Character Glyph Options</div>
+          <div class="control-row">
+            <div class="control-label">Char Set</div>
+            <select id="charSet">
+              <option value="standard">standard ( .:-=+*#%@)</option>
+              <option value="blocks">blocks ( ░▒▓█)</option>
+              <option value="binary">binary (01)</option>
+              <option value="matrix">matrix (Katakana Rain)</option>
+              <option value="minimal">minimal ( .:+*#)</option>
+              <option value="digits">digits (0-9)</option>
+              <option value="ascii">ascii (Full Punctuation)</option>
+              <option value="custom">custom</option>
+            </select>
+          </div>
+
+          <div class="control-row">
+            <div class="control-label">Custom Characters</div>
+            <input type="text" id="customChars" placeholder="e.g. .oO0@">
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: Color & BG -->
+      <div class="tab-content" id="tab-color">
+        <div class="control-group">
+          <div class="group-title">Background Pipeline</div>
+          <div class="control-row">
+            <div class="control-label">Background Mode</div>
+            <select id="bgMode">
+              <option value="solid" selected>solid (Dark Studio)</option>
+              <option value="blurred">blurred (Source Photo Blur)</option>
+              <option value="photo">photo (Original Photo Pass)</option>
+              <option value="none">none (Transparent Background)</option>
+            </select>
+          </div>
+
+          <div class="control-row">
+            <div class="control-label">
+              <span>Background Blur</span>
+              <span class="control-value" id="val-bgBlur">12</span>
+            </div>
+            <input type="range" id="bgBlur" min="0" max="50" value="12">
+          </div>
+
+          <div class="control-row">
+            <div class="control-label">
+              <span>Background Opacity (%)</span>
+              <span class="control-value" id="val-bgOpacity">90</span>
+            </div>
+            <input type="range" id="bgOpacity" min="0" max="100" value="90">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="group-title">Color Grading</div>
+          <div class="control-row">
+            <div class="control-label">
+              <span>Brightness</span>
+              <span class="control-value" id="val-brightness">12</span>
+            </div>
+            <input type="range" id="brightness" min="-100" max="100" value="12">
+          </div>
+
+          <div class="control-row">
+            <div class="control-label">
+              <span>Contrast (%)</span>
+              <span class="control-value" id="val-contrast">115</span>
+            </div>
+            <input type="range" id="contrast" min="0" max="200" value="115">
+          </div>
+
+          <div class="control-row">
+            <div class="control-label">
+              <span>Saturation (%)</span>
+              <span class="control-value" id="val-saturation">100</span>
+            </div>
+            <input type="range" id="saturation" min="0" max="200" value="100">
+          </div>
+
+          <div class="control-row">
+            <div class="control-label">
+              <span>Grayscale (%)</span>
+              <span class="control-value" id="val-grayscale">0</span>
+            </div>
+            <input type="range" id="grayscale" min="0" max="100" value="0">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="group-title">Tint Overlay & Blend</div>
+          <div class="control-row" style="display: flex; align-items: center; gap: 12px;">
+            <input type="color" id="tint" value="#3ca6ff">
+            <div style="flex: 1;">
+              <select id="overlayBlend">
+                <option value="multiply" selected>multiply</option>
+                <option value="screen">screen</option>
+                <option value="overlay">overlay</option>
+                <option value="color">color</option>
+                <option value="source-over">source-over</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <div class="control-label">
+              <span>Tint Opacity (%)</span>
+              <span class="control-value" id="val-tintOpacity">0</span>
+            </div>
+            <input type="range" id="tintOpacity" min="0" max="100" value="0">
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: Post FX (PFX) -->
+      <div class="tab-content" id="tab-pfx">
+        <!-- Vignette -->
+        <div class="control-group">
+          <label class="switch-label">
+            <span style="font-weight: 700;">Vignette Darkening</span>
+            <div class="switch">
+              <input type="checkbox" id="pfx-vignette-enabled" checked>
+              <span class="slider"></span>
+            </div>
+          </label>
+          <div class="control-row" style="margin-top: 8px;">
+            <div class="control-label">
+              <span>Intensity</span>
+              <span class="control-value" id="val-pfx-vignette-intensity">38</span>
+            </div>
+            <input type="range" id="pfx-vignette-intensity" min="0" max="100" value="38">
+          </div>
+        </div>
+
+        <!-- Bloom -->
+        <div class="control-group">
+          <label class="switch-label">
+            <span style="font-weight: 700;">Bloom Glow</span>
+            <div class="switch">
+              <input type="checkbox" id="pfx-bloom-enabled" checked>
+              <span class="slider"></span>
+            </div>
+          </label>
+          <div class="control-row" style="margin-top: 8px;">
+            <div class="control-label">
+              <span>Intensity</span>
+              <span class="control-value" id="val-pfx-bloom-intensity">25</span>
+            </div>
+            <input type="range" id="pfx-bloom-intensity" min="0" max="100" value="25">
+          </div>
+        </div>
+
+        <!-- Scanlines -->
+        <div class="control-group">
+          <label class="switch-label">
+            <span style="font-weight: 700;">CRT Scanlines</span>
+            <div class="switch">
+              <input type="checkbox" id="pfx-scanLines-enabled">
+              <span class="slider"></span>
+            </div>
+          </label>
+          <div class="control-row" style="margin-top: 8px;">
+            <div class="control-label">
+              <span>Intensity</span>
+              <span class="control-value" id="val-pfx-scanLines-intensity">40</span>
+            </div>
+            <input type="range" id="pfx-scanLines-intensity" min="0" max="100" value="40">
+          </div>
+        </div>
+
+        <!-- Chromatic -->
+        <div class="control-group">
+          <label class="switch-label">
+            <span style="font-weight: 700;">Chromatic Aberration</span>
+            <div class="switch">
+              <input type="checkbox" id="pfx-chromatic-enabled">
+              <span class="slider"></span>
+            </div>
+          </label>
+          <div class="control-row" style="margin-top: 8px;">
+            <div class="control-label">
+              <span>Intensity</span>
+              <span class="control-value" id="val-pfx-chromatic-intensity">15</span>
+            </div>
+            <input type="range" id="pfx-chromatic-intensity" min="0" max="100" value="15">
+          </div>
+        </div>
+
+        <!-- Film Grain -->
+        <div class="control-group">
+          <label class="switch-label">
+            <span style="font-weight: 700;">Film Grain</span>
+            <div class="switch">
+              <input type="checkbox" id="pfx-filmGrain-enabled">
+              <span class="slider"></span>
+            </div>
+          </label>
+          <div class="control-row" style="margin-top: 8px;">
+            <div class="control-label">
+              <span>Intensity</span>
+              <span class="control-value" id="val-pfx-filmGrain-intensity">30</span>
+            </div>
+            <input type="range" id="pfx-filmGrain-intensity" min="0" max="100" value="30">
+          </div>
+        </div>
+
+        <!-- Glitch -->
+        <div class="control-group">
+          <label class="switch-label">
+            <span style="font-weight: 700;">Glitch Slice Shift</span>
+            <div class="switch">
+              <input type="checkbox" id="pfx-glitch-enabled">
+              <span class="slider"></span>
+            </div>
+          </label>
+          <div class="control-row" style="margin-top: 8px;">
+            <div class="control-label">
+              <span>Intensity</span>
+              <span class="control-value" id="val-pfx-glitch-intensity">20</span>
+            </div>
+            <input type="range" id="pfx-glitch-intensity" min="0" max="100" value="20">
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: Anim & Lights -->
+      <div class="tab-content" id="tab-anim">
+        <div class="control-group">
+          <label class="switch-label">
+            <span style="font-weight: 700;">Enable Animation</span>
+            <div class="switch">
+              <input type="checkbox" id="animated" checked>
+              <span class="slider"></span>
+            </div>
+          </label>
+        </div>
+
+        <div class="control-group">
+          <div class="group-title">Animation Style & Speed</div>
+          <div class="control-row">
+            <div class="control-label">Motion Style</div>
+            <select id="animStyle">
+              <option value="wave" selected>wave (Sine Wave Phase)</option>
+              <option value="pulse">pulse (Breathing Rhythm)</option>
+              <option value="shimmer">shimmer (Sparkle Flash)</option>
+              <option value="ripple">ripple (Concentric Radial)</option>
+              <option value="flicker">flicker (Random Noise)</option>
+            </select>
+          </div>
+
+          <div class="control-row">
+            <div class="control-label">
+              <span>Anim Speed</span>
+              <span class="control-value" id="val-animSpeed-intensity">100</span>
+            </div>
+            <input type="range" id="animSpeed-intensity" min="0" max="200" value="100">
+          </div>
+
+          <div class="control-row">
+            <div class="control-label">
+              <span>Anim Intensity</span>
+              <span class="control-value" id="val-animIntensity-intensity">60</span>
+            </div>
+            <input type="range" id="animIntensity-intensity" min="0" max="100" value="60">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="group-title">Blur Filters</div>
+          <div class="control-row">
+            <div class="control-label">Blur Mode</div>
+            <select id="blurType">
+              <option value="off" selected>off</option>
+              <option value="gaussian">gaussian</option>
+              <option value="radial">radial</option>
+            </select>
+          </div>
+
+          <div class="control-row">
+            <div class="control-label">
+              <span>Blur Amount</span>
+              <span class="control-value" id="val-blurAmount">35</span>
+            </div>
+            <input type="range" id="blurAmount" min="0" max="100" value="35">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="switch-label">
+            <span style="font-weight: 700;">Light Source Glows</span>
+            <div class="switch">
+              <input type="checkbox" id="lights-enabled">
+              <span class="slider"></span>
+            </div>
+          </label>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- JavaScript Module Wire-up -->
+  <script type="module">
+    import { AsciiRenderer, VIGNETTE_BLOOM_PRESET } from './src/ascii-renderer.js';
+
+    const canvas = document.getElementById('mainCanvas');
+    const renderer = new AsciiRenderer(canvas);
+
+    // Initial default image
+    const sourceImg = new Image();
+    sourceImg.crossOrigin = "anonymous";
+    sourceImg.src = './ref-008.webp';
+    sourceImg.onload = () => {
+      canvas.width = sourceImg.naturalWidth || 960;
+      canvas.height = sourceImg.naturalHeight || 720;
+      renderer.setSourceImage(sourceImg);
+    };
+
+    // FPS Counter
+    let lastTime = performance.now();
+    let frameCount = 0;
+    const fpsElem = document.getElementById('fpsCounter');
+
+    function animate(now) {
+      frameCount++;
+      if (now - lastTime >= 1000) {
+        fpsElem.textContent = `${frameCount} FPS`;
+        frameCount = 0;
+        lastTime = now;
+      }
+      renderer.render(now);
+      requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+
+    // UI Tab Navigation
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    // Sync UI with params state
+    function updateStateFromUI() {
+      const p = JSON.parse(JSON.stringify(renderer.params));
+
+      p.renderMode = document.getElementById('renderMode').value;
+      p.cellSize = parseInt(document.getElementById('cellSize').value);
+      p.coverage = parseInt(document.getElementById('coverage').value);
+      p.density = parseInt(document.getElementById('density').value);
+      p.edgeEmphasis = parseInt(document.getElementById('edgeEmphasis').value);
+      p.invert = document.getElementById('invert').checked;
+
+      p.charSet = document.getElementById('charSet').value;
+      p.customChars = document.getElementById('customChars').value;
+
+      p.bgMode = document.getElementById('bgMode').value;
+      p.bgBlur = parseInt(document.getElementById('bgBlur').value);
+      p.bgOpacity = parseInt(document.getElementById('bgOpacity').value);
+
+      p.brightness = parseInt(document.getElementById('brightness').value);
+      p.contrast = parseInt(document.getElementById('contrast').value);
+      p.saturation = parseInt(document.getElementById('saturation').value);
+      p.grayscale = parseInt(document.getElementById('grayscale').value);
+
+      p.tint = document.getElementById('tint').value;
+      p.tintOpacity = parseInt(document.getElementById('tintOpacity').value);
+      p.overlayBlend = document.getElementById('overlayBlend').value;
+
+      p.pfx.vignette.enabled = document.getElementById('pfx-vignette-enabled').checked;
+      p.pfx.vignette.intensity = parseInt(document.getElementById('pfx-vignette-intensity').value);
+
+      p.pfx.bloom.enabled = document.getElementById('pfx-bloom-enabled').checked;
+      p.pfx.bloom.intensity = parseInt(document.getElementById('pfx-bloom-intensity').value);
+
+      p.pfx.scanLines.enabled = document.getElementById('pfx-scanLines-enabled').checked;
+      p.pfx.scanLines.intensity = parseInt(document.getElementById('pfx-scanLines-intensity').value);
+
+      p.pfx.chromatic.enabled = document.getElementById('pfx-chromatic-enabled').checked;
+      p.pfx.chromatic.intensity = parseInt(document.getElementById('pfx-chromatic-intensity').value);
+
+      p.pfx.filmGrain.enabled = document.getElementById('pfx-filmGrain-enabled').checked;
+      p.pfx.filmGrain.intensity = parseInt(document.getElementById('pfx-filmGrain-intensity').value);
+
+      p.pfx.glitch.enabled = document.getElementById('pfx-glitch-enabled').checked;
+      p.pfx.glitch.intensity = parseInt(document.getElementById('pfx-glitch-intensity').value);
+
+      p.animated = document.getElementById('animated').checked;
+      p.animStyle = document.getElementById('animStyle').value;
+      p.animSpeed.intensity = parseInt(document.getElementById('animSpeed-intensity').value);
+      p.animIntensity.intensity = parseInt(document.getElementById('animIntensity-intensity').value);
+
+      p.blurType = document.getElementById('blurType').value;
+      p.blurAmount = parseInt(document.getElementById('blurAmount').value);
+
+      p.lights.enabled = document.getElementById('lights-enabled').checked;
+
+      renderer.setParams(p);
+
+      // Update badge
+      document.getElementById('activePresetBadge').textContent = `Custom (${p.renderMode})`;
+    }
+
+    // Attach event listeners to all input controls
+    document.querySelectorAll('input, select').forEach(elem => {
+      elem.addEventListener('input', (e) => {
+        const valSpan = document.getElementById(`val-${e.target.id}`);
+        if (valSpan) valSpan.textContent = e.target.value;
+        updateStateFromUI();
+      });
+    });
+
+    // Image Upload
+    document.getElementById('imageInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          const newImg = new Image();
+          newImg.src = evt.target.result;
+          newImg.onload = () => {
+            canvas.width = newImg.naturalWidth;
+            canvas.height = newImg.naturalHeight;
+            renderer.setSourceImage(newImg);
+          };
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Reset Preset
+    document.getElementById('resetPresetBtn').addEventListener('click', () => {
+      renderer.setParams(VIGNETTE_BLOOM_PRESET);
+      // Reload UI
+      location.reload();
+    });
+
+    // Export JSON
+    document.getElementById('exportJsonBtn').addEventListener('click', () => {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(renderer.params, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "vignette_bloom_preset.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    });
+
+    // Export Snapshot
+    document.getElementById('exportSnapshotBtn').addEventListener('click', () => {
+      const dataUrl = canvas.toDataURL('image/png');
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataUrl);
+      downloadAnchor.setAttribute("download", "vignette_bloom_ascii.png");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    });
+  </script>
+</body>
+
+</html>
