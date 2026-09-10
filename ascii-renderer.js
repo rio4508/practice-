@@ -244,7 +244,7 @@ export class AsciiRenderer {
         // Relative Luminance Y
         let lum = (0.299 * avgR + 0.587 * avgG + 0.114 * avgB) / 255;
 
-        // Edge emphasis calculation (Sobel approximation with neighbor cells)
+        // Edge emphasis calculation
         if (params.edgeEmphasis > 0) {
           const rightX = Math.min(cx + cellSize, width - 1);
           const bottomY = Math.min(cy + cellSize, height - 1);
@@ -294,7 +294,6 @@ export class AsciiRenderer {
           }
 
           case "dither": {
-            // Bayer 4x4 matrix index
             const bayer = [
               [0, 8, 2, 10],
               [12, 4, 14, 6],
@@ -355,10 +354,8 @@ export class AsciiRenderer {
           }
 
           case "voxel": {
-            // Isometric cube primitive
             const size = (cellSize / 2) * densityScale;
             eCtx.beginPath();
-            // Top face
             eCtx.fillStyle = `rgba(${Math.min(255, avgR + 40)}, ${Math.min(255, avgG + 40)}, ${Math.min(255, avgB + 40)}, ${avgA})`;
             eCtx.moveTo(centerX, centerY - size * 0.8);
             eCtx.lineTo(centerX + size * 0.8, centerY - size * 0.4);
@@ -366,7 +363,7 @@ export class AsciiRenderer {
             eCtx.lineTo(centerX - size * 0.8, centerY - size * 0.4);
             eCtx.closePath();
             eCtx.fill();
-            // Left face
+
             eCtx.fillStyle = `rgba(${Math.max(0, avgR - 30)}, ${Math.max(0, avgG - 30)}, ${Math.max(0, avgB - 30)}, ${avgA})`;
             eCtx.beginPath();
             eCtx.moveTo(centerX - size * 0.8, centerY - size * 0.4);
@@ -375,7 +372,7 @@ export class AsciiRenderer {
             eCtx.lineTo(centerX - size * 0.8, centerY + size * 0.4);
             eCtx.closePath();
             eCtx.fill();
-            // Right face
+
             eCtx.fillStyle = `rgba(${avgR}, ${avgG}, ${avgB}, ${avgA})`;
             eCtx.beginPath();
             eCtx.moveTo(centerX, centerY);
@@ -390,7 +387,6 @@ export class AsciiRenderer {
           case "lego": {
             const pad = 1;
             eCtx.fillRect(cx + pad, cy + pad, cellSize - pad * 2, cellSize - pad * 2);
-            // Stud on top
             eCtx.fillStyle = `rgba(${Math.min(255, avgR + 50)}, ${Math.min(255, avgG + 50)}, ${Math.min(255, avgB + 50)}, ${avgA})`;
             eCtx.beginPath();
             eCtx.arc(centerX, centerY, cellSize * 0.25 * densityScale, 0, Math.PI * 2);
@@ -400,7 +396,6 @@ export class AsciiRenderer {
 
           case "mixed": {
             if (lum > 0.75) {
-              // Star/Cross
               const len = (cellSize / 2) * densityScale;
               eCtx.lineWidth = 2;
               eCtx.beginPath();
@@ -408,12 +403,10 @@ export class AsciiRenderer {
               eCtx.moveTo(centerX, centerY - len); eCtx.lineTo(centerX, centerY + len);
               eCtx.stroke();
             } else if (lum > 0.4) {
-              // Circle
               eCtx.beginPath();
               eCtx.arc(centerX, centerY, (cellSize / 2) * lum * densityScale, 0, Math.PI * 2);
               eCtx.fill();
             } else {
-              // Small square
               const s = (cellSize / 3) * densityScale;
               eCtx.fillRect(centerX - s / 2, centerY - s / 2, s, s);
             }
@@ -439,7 +432,6 @@ export class AsciiRenderer {
           }
 
           case "braille": {
-            // Braille char lookup based on 4-bit luminance pattern
             const brailleBase = 0x2800;
             let code = 0;
             if (lum > 0.2) code |= 0x1;
@@ -472,10 +464,9 @@ export class AsciiRenderer {
           }
 
           case "matrix": {
-            // Matrix rain green digital code
             const rainY = this.matrixDrops[c] || 0;
             if (r === Math.floor(rainY)) {
-              eCtx.fillStyle = '#ffffff'; // Bright head
+              eCtx.fillStyle = '#ffffff';
             } else if (r < rainY && r > rainY - 8) {
               eCtx.fillStyle = `rgba(50, 255, 100, ${1 - (rainY - r) / 8})`;
             } else {
@@ -484,7 +475,6 @@ export class AsciiRenderer {
             const matrixChar = CHAR_SETS.matrix[Math.floor(Math.random() * CHAR_SETS.matrix.length)];
             eCtx.fillText(matrixChar, centerX, centerY);
             
-            // Advance rain drops randomly
             if (r === rows - 1 && Math.random() > 0.95) {
               this.matrixDrops[c] = (this.matrixDrops[c] + 0.2 * animSpeed) % rows;
             }
@@ -566,7 +556,6 @@ export class AsciiRenderer {
             eCtx.beginPath();
             eCtx.arc(centerX, centerY, bR, 0, Math.PI * 2);
             eCtx.fill();
-            // Highlight shine
             eCtx.fillStyle = 'rgba(255, 255, 255, 0.6)';
             eCtx.beginPath();
             eCtx.arc(centerX - bR * 0.3, centerY - bR * 0.3, bR * 0.25, 0, Math.PI * 2);
@@ -598,7 +587,6 @@ export class AsciiRenderer {
           }
 
           case "halfblocks": {
-            // Upper and lower half blocks
             eCtx.fillRect(cx, cy, cellSize, cellSize / 2);
             eCtx.fillStyle = `rgba(${Math.max(0, avgR - 40)}, ${Math.max(0, avgG - 40)}, ${Math.max(0, avgB - 40)}, ${avgA})`;
             eCtx.fillRect(cx, cy + cellSize / 2, cellSize, cellSize / 2);
@@ -616,9 +604,7 @@ export class AsciiRenderer {
     ctx.drawImage(this.effectCanvas, 0, 0, width, height);
     ctx.restore();
 
-    // ----------------------------------------------------
     // STEP 4: Color Adjustments & Filters
-    // ----------------------------------------------------
     const bVal = params.brightness ?? 0;
     const cVal = params.contrast ?? 100;
     const sVal = params.saturation ?? 100;
@@ -647,33 +633,7 @@ export class AsciiRenderer {
       ctx.restore();
     }
 
-    // Blur Filters (Gaussian, Directional, Radial, Tilt-Shift, etc.)
-    if (params.blurType && params.blurType !== "off" && params.blurAmount > 0) {
-      ctx.save();
-      if (params.blurType === "gaussian") {
-        ctx.filter = `blur(${params.blurAmount * 0.3}px)`;
-        ctx.drawImage(this.canvas, 0, 0, width, height);
-      } else if (params.blurType === "radial") {
-        const cxRad = (params.blurCenterX / 100) * width;
-        const cyRad = (params.blurCenterY / 100) * height;
-        const passes = Math.min(8, Math.ceil(params.blurAmount / 10));
-        ctx.globalAlpha = 1 / passes;
-        for (let p = 1; p <= passes; p++) {
-          const scale = 1 + (p * 0.01 * (params.blurAmount / 20));
-          ctx.save();
-          ctx.translate(cxRad, cyRad);
-          ctx.scale(scale, scale);
-          ctx.translate(-cxRad, -cyRad);
-          ctx.drawImage(this.canvas, 0, 0, width, height);
-          ctx.restore();
-        }
-      }
-      ctx.restore();
-    }
-
-    // ----------------------------------------------------
     // STEP 5: Post-Effects Pipeline (PFX)
-    // ----------------------------------------------------
     const pfx = params.pfx || {};
 
     // Bloom Effect
@@ -701,152 +661,6 @@ export class AsciiRenderer {
       ctx.fillStyle = vGrad;
       ctx.fillRect(0, 0, width, height);
       ctx.restore();
-    }
-
-    // Scanlines Effect
-    if (pfx.scanLines?.enabled && pfx.scanLines.intensity > 0) {
-      const sInt = pfx.scanLines.intensity / 100;
-      ctx.save();
-      ctx.fillStyle = `rgba(0, 0, 0, ${sInt * 0.4})`;
-      for (let y = 0; y < height; y += 4) {
-        ctx.fillRect(0, y, width, 2);
-      }
-      ctx.restore();
-    }
-
-    // Chromatic Aberration
-    if (pfx.chromatic?.enabled && pfx.chromatic.intensity > 0) {
-      const cInt = Math.ceil((pfx.chromatic.intensity / 100) * 8);
-      ctx.save();
-      ctx.globalCompositeOperation = 'screen';
-      ctx.globalAlpha = 0.5;
-      // Red shift
-      ctx.drawImage(this.canvas, -cInt, 0, width, height);
-      // Blue shift
-      ctx.drawImage(this.canvas, cInt, 0, width, height);
-      ctx.restore();
-    }
-
-    // Film Grain
-    if (pfx.filmGrain?.enabled && pfx.filmGrain.intensity > 0) {
-      const gInt = pfx.filmGrain.intensity / 100;
-      ctx.save();
-      const grainImg = ctx.createImageData(100, 100);
-      const gPix = grainImg.data;
-      for (let i = 0; i < gPix.length; i += 4) {
-        const val = Math.floor(Math.random() * 255);
-        gPix[i] = val; gPix[i + 1] = val; gPix[i + 2] = val;
-        gPix[i + 3] = Math.floor(Math.random() * 40 * gInt);
-      }
-      this.sampleCtx.putImageData(grainImg, 0, 0);
-      const grainPattern = ctx.createPattern(this.sampleCanvas, 'repeat');
-      ctx.fillStyle = grainPattern;
-      ctx.fillRect(0, 0, width, height);
-      ctx.restore();
-    }
-
-    // Glitch Distortion
-    if (pfx.glitch?.enabled && pfx.glitch.intensity > 0) {
-      const glInt = pfx.glitch.intensity / 100;
-      if (Math.random() < 0.3 * glInt) {
-        ctx.save();
-        const slices = Math.floor(3 * glInt);
-        for (let i = 0; i < slices; i++) {
-          const sy = Math.random() * height;
-          const sh = 5 + Math.random() * 20;
-          const sx = (Math.random() - 0.5) * 30 * glInt;
-          ctx.drawImage(this.canvas, 0, sy, width, sh, sx, sy, width, sh);
-        }
-        ctx.restore();
-      }
-    }
-
-    // Halftone Overlay
-    if (pfx.halftone?.enabled && pfx.halftone.intensity > 0) {
-      const hInt = pfx.halftone.intensity / 100;
-      ctx.save();
-      ctx.fillStyle = `rgba(0, 0, 0, ${hInt * 0.3})`;
-      const hStep = 8;
-      for (let hy = 0; hy < height; hy += hStep) {
-        for (let hx = 0; hx < width; hx += hStep) {
-          ctx.beginPath();
-          ctx.arc(hx + hStep / 2, hy + hStep / 2, (hStep / 2) * 0.6, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-      ctx.restore();
-    }
-
-    // Film Dust & Scratches
-    if (pfx.filmDust?.enabled && pfx.filmDust.intensity > 0) {
-      const dInt = pfx.filmDust.intensity / 100;
-      ctx.save();
-      ctx.fillStyle = `rgba(255, 255, 255, ${0.4 * dInt})`;
-      ctx.strokeStyle = `rgba(255, 255, 255, ${0.5 * dInt})`;
-      const numDust = Math.floor(10 * dInt);
-      for (let d = 0; d < numDust; d++) {
-        if (Math.random() > 0.5) {
-          // Speck
-          ctx.beginPath();
-          ctx.arc(Math.random() * width, Math.random() * height, Math.random() * 2, 0, Math.PI * 2);
-          ctx.fill();
-        } else {
-          // Scratch line
-          const rx = Math.random() * width;
-          const ry = Math.random() * height;
-          ctx.beginPath();
-          ctx.moveTo(rx, ry);
-          ctx.lineTo(rx + (Math.random() - 0.5) * 15, ry + Math.random() * 25);
-          ctx.stroke();
-        }
-      }
-      ctx.restore();
-    }
-
-    // ----------------------------------------------------
-    // STEP 6: Light Glow Sources
-    // ----------------------------------------------------
-    if (params.lights?.enabled && params.lights.points && params.lights.points.length > 0) {
-      ctx.save();
-      ctx.globalCompositeOperation = 'screen';
-      for (const pt of params.lights.points) {
-        const lx = pt.x * width;
-        const ly = pt.y * height;
-        const lRadius = (pt.radius || 150);
-        const lInt = (pt.intensity || 50) / 100;
-        const lColor = pt.color || "#ffffff";
-
-        const lGrad = ctx.createRadialGradient(lx, ly, 0, lx, ly, lRadius);
-        lGrad.addColorStop(0, lColor);
-        lGrad.addColorStop(1, 'transparent');
-
-        ctx.globalAlpha = lInt;
-        ctx.fillStyle = lGrad;
-        ctx.beginPath();
-        ctx.arc(lx, ly, lRadius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.restore();
-    }
-
-    // ----------------------------------------------------
-    // STEP 7: Reveal Masking
-    // ----------------------------------------------------
-    if (params.mask?.enabled && params.mask.dataUrl) {
-      // Reveal original photo based on mask
-      const mCtx = this.maskCtx;
-      mCtx.clearRect(0, 0, width, height);
-
-      const maskImg = new Image();
-      maskImg.src = params.mask.dataUrl;
-      if (maskImg.complete) {
-        mCtx.drawImage(maskImg, 0, 0, width, height);
-
-        ctx.save();
-        ctx.globalCompositeOperation = params.mask.invert ? 'destination-out' : 'destination-in';
-        ctx.drawImage(this.maskCanvas, 0, 0, width, height);
-        ctx.restore();
-      }
     }
   }
 }
